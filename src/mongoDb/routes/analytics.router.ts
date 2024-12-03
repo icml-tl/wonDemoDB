@@ -5,7 +5,6 @@ const router = require("express").Router();
 
 
 
-
 router.get("/total_sales", async (req: Request, res: Response): Promise<Response> => {
     try {
       const startDate = req.query.startDate as string;
@@ -49,7 +48,6 @@ router.get("/total_sales", async (req: Request, res: Response): Promise<Response
   
   router.get("/trending_products", async (req: Request, res: Response): Promise<Response> => {
     try {
-      // MongoDB aggregation to get the top 3 selling products by Quantity
       const topSellingProducts = await Sale.aggregate([
         {
           $group: {
@@ -61,7 +59,7 @@ router.get("/total_sales", async (req: Request, res: Response): Promise<Response
           $sort: { totalQuantity: -1 },  // Sort by totalQuantity in descending order
         },
         {
-          $limit: 3,  // Limit to top 3 products
+          $limit: 3,
         },
         {
           $project: {
@@ -71,12 +69,13 @@ router.get("/total_sales", async (req: Request, res: Response): Promise<Response
           },
         },
       ]);
-      // If no top-selling products are found, return an empty array
+      // no topSellingProducts are found
       if (!topSellingProducts || topSellingProducts.length === 0) {
         return res.status(200).json({ topSellingProducts: [] });
       }
-      // Respond with the top-selling products
+
       return res.status(200).json({ topSellingProducts });
+
     } catch (e) {
       console.error("Erreur lors de la récupération des produits les plus vendus :", e);
       return res.status(500).send("Erreur serveur");
@@ -133,7 +132,7 @@ router.get("/total_sales", async (req: Request, res: Response): Promise<Response
   });
 
 
-  router.get("/products-Retourne", async (req: Request, res: Response): Promise<Response> => {
+  router.get("/products_Retourne", async (req: Request, res: Response): Promise<Response> => {
     try {
       const productReturn = await Sale.aggregate([
         {
@@ -176,6 +175,74 @@ router.get("/total_sales", async (req: Request, res: Response): Promise<Response
       return res.status(500).json({ message: "Server error while retrieving sales data." });
     }
   });
+
+
+  router.get("/products_sells", async (req: Request, res: Response): Promise<Response> => {
+      try{
+          const productName  = req.query.productName as string;
+          if(!productName){
+              return res.status(400).json({error:"productName is required"});
+          }
+          const productSells = await Sale.aggregate([
+            {
+              $addFields: {
+                ProductID: { $toString: "$ProductID" } ,
+                Quantity : { $toInt: "$Quantity" }
+              }
+            },            
+            {
+              $lookup: {
+                from: "products", 
+                localField: "ProductID",
+                foreignField: "ProductID",
+                as: "productDetails", 
+              },
+            },
+            {
+              $unwind: "$productDetails", 
+            },
+            {
+              $match: {
+                "productDetails.ProductName": { $regex: new RegExp(productName, "i") },
+              },
+            },
+            {
+                $addFields :{
+                  TotalAmount : { $multiply: [ "$Quantity", "$productDetails.Price" ] },  //qte * unitPrice
+                }
+            },
+            {
+              $group: {
+                _id: "$productDetails.ProductName",
+                totalSales: { $sum: "$Quantity" }, 
+                totalRevenue: { $sum: "$TotalAmount" }, 
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                ProductName: "$_id",
+                totalSales: 1,
+                totalRevenue: 1,
+              },
+            },
+          ]);
+          
+          
+          const totalSalesCount = await Sale.countDocuments();
+          let selesPerProduct = productSells.map(product =>({
+              ProductName: product.ProductName,
+              totalSales: product.totalSales,
+              totalRevenue: product.totalRevenue,  
+          }))
+
+       return  res.status(200).json({selesPerProduct,totalSalesCount});
+
+      }catch(e){
+        console.error("Error retrieving sales data:", e);
+        return res.status(500).json({ message: "Server error while retrieving sales data." });
+      }
+  })
   
   export { router };
   
