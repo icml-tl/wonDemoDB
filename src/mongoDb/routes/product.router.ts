@@ -15,5 +15,7 @@ router.get("/products", async (req: Request, res: Response) => {
   }
 });
 
+//  top 3 selled products
+
 
 export { router };

@@ -22,7 +22,7 @@ mongoose_1.default
     console.error("Error connecting to MongoDB:", err);
     process.exit(1);
 });
-const BATCH_SIZE = 1000; // Adjust the batch size as needed
+const BATCH_SIZE = 1000; //batch size as needed
 const importData = async (filePath, type) => {
     try {
         let totalSalesInserted = 0; // Counter for total sales inserted
@@ -49,10 +49,9 @@ const importData = async (filePath, type) => {
                 }
             })
                 .on("end", async () => {
-                // Insert any remaining products
                 if (products.length > 0) {
                     await product_model_js_1.Product.insertMany(products);
-                    totalSalesInserted += products.length; // Update the counter
+                    totalSalesInserted += products.length;
                     console.log(`Inserted remaining ${products.length} products.`);
                 }
                 console.log("Product CSV file successfully processed.");
@@ -75,7 +74,7 @@ const importData = async (filePath, type) => {
                 if (sales.length === BATCH_SIZE) {
                     sales_model_js_1.Sale.insertMany(sales)
                         .then(() => {
-                        totalSalesInserted += sales.length; // Update the counter
+                        totalSalesInserted += sales.length;
                         console.log(`Inserted ${BATCH_SIZE} sales.`);
                         sales.length = 0; // Clear the array
                     })
