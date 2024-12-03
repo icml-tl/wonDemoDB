@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { router as productRouter } from './mongoDb/routes/product.router.js';
 import { router as salesRouter } from './mongoDb/routes/sales.router.js';
+import { router as analyticsRouter } from './mongoDb/routes/analytics.router.js';
 
 
 
@@ -39,6 +40,10 @@ app.use(cookieParser());
 app.use('/api', productRouter);  
 
 app.use('/api', salesRouter);
+
+app.use('/analytics', analyticsRouter);
+
+
 
 app.get('/', (req: Request, res: Response) => {
   res.status(200).send("Hello World of numeric");

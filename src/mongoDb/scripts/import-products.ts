@@ -117,5 +117,5 @@ const importData = async (filePath: string, type: 'products' | 'sales'): Promise
 };
 
 // Update the CSV file path based on your actual file location and type
-// importData("src/assets/products.csv", 'products'); // For product import
-importData("src/assets/sales.csv", 'sales'); // Uncomment for sales import
+importData("src/assets/products.csv", 'products'); // For product import
+//importData("src/assets/sales.csv", 'sales'); // Uncomment for sales import
