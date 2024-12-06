@@ -1,8 +1,8 @@
 import fs from "fs";
 import csvParser from "csv-parser";
 import mongoose from "mongoose";
-import { Product } from '../models/product.model.js'; 
-import { Sale } from '../models/sales.model.js';
+import { Product } from '../mongoDb/models/product.model.js'; 
+import { Sale } from '../mongoDb/models/sales.model.js';
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -36,11 +36,11 @@ interface SaleData {
     TotalAmount: number;
 }
 
-const BATCH_SIZE = 1000; //batch size as needed
+const BATCH_SIZE = 1000; 
 
 const importData = async (filePath: string, type: 'products' | 'sales'): Promise<void> => {
     try {
-        let totalSalesInserted = 0; // Counter for total sales inserted
+        let totalSalesInserted = 0; 
 
         if (type === 'products') {
             const products: ProductData[] = [];
@@ -53,14 +53,12 @@ const importData = async (filePath: string, type: 'products' | 'sales'): Promise
                         Category: row.Category,
                         Price: parseFloat(row.Price),
                     });
-
-                    // If the batch size is reached, insert the batch
                     if (products.length === BATCH_SIZE) {
                         Product.insertMany(products)
                             .then(() => {
-                                totalSalesInserted += products.length; // Update the counter
+                                totalSalesInserted += products.length; 
                                 console.log(`Inserted ${BATCH_SIZE} products.`);
-                                products.length = 0; // Clear the array
+                                products.length = 0; 
                             })
                             .catch(err => console.error("Error inserting batch of products:", err));
                     }
@@ -86,23 +84,20 @@ const importData = async (filePath: string, type: 'products' | 'sales'): Promise
                         Date: row.Date,
                         TotalAmount: parseFloat(row.TotalAmount),
                     });
-
-                    // If the batch size is reached, insert the batch
                     if (sales.length === BATCH_SIZE) {
                         Sale.insertMany(sales)
                             .then(() => {
                                 totalSalesInserted += sales.length;
                                 console.log(`Inserted ${BATCH_SIZE} sales.`);
-                                sales.length = 0; // Clear the array
+                                sales.length = 0;
                             })
                             .catch(err => console.error("Error inserting batch of sales:", err));
                     }
                 })
                 .on("end", async () => {
-                    // Insert any remaining sales
                     if (sales.length > 0) {
                         await Sale.insertMany(sales);
-                        totalSalesInserted += sales.length; // Update the counter
+                        totalSalesInserted += sales.length;
                         console.log(`Inserted remaining ${sales.length} sales.`);
                     }
                     console.log(`Total sales inserted: ${totalSalesInserted}`);
@@ -116,6 +111,9 @@ const importData = async (filePath: string, type: 'products' | 'sales'): Promise
     }
 };
 
-// Update the CSV file path based on your actual file location and type
-importData("src/assets/products.csv", 'products'); // For product import
-//importData("src/assets/sales.csv", 'sales'); // Uncomment for sales import
+
+// run node dist/scripts/import-data.js to insert products data 
+importData("src/assets/products.csv", 'products'); 
+
+// Uncomment to import sales data and run npm run build then run this commande   node dist/scripts/import-data.js
+//importData("src/assets/sales.csv", 'sales'); 

@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",                // Change to CommonJS for Node.js compatibility
-    "moduleResolution": "Node",           // Ensures Node-style module resolution
-    "target": "ESNext",                   // Modern JavaScript (supports async/await, etc.)
-    "esModuleInterop": true,              // Ensures interoperability between CommonJS and ES Modules
-    "strict": true,                       // Enables all strict type-checking options
-    "sourceMap": true,                    // Generate source maps for debugging
-    "rootDir": "./src",                   // Points to the source folder
-    "outDir": "./dist",                   // Output folder for transpiled JS
-    "forceConsistentCasingInFileNames": true, // Enforces consistent file naming
-    "skipLibCheck": true                  // Skips type checking of declaration files (can speed up compilation)
+    "module": "CommonJS",                
+    "moduleResolution": "Node",           
+    "target": "ESNext",                   
+    "esModuleInterop": true,              
+    "strict": true,                       
+    "sourceMap": true,                    
+    "rootDir": "./src",                   
+    "outDir": "./dist",                   
+    "forceConsistentCasingInFileNames": true, 
+    "skipLibCheck": true                  
   },
-  "include": ["src/**/*"],                // Include all TypeScript files in the src folder
-  "exclude": ["node_modules"]             // Exclude node_modules from compilation
+  "include": ["src/**/*"],                
+  "exclude": ["node_modules"]             
 }

@@ -6,8 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const csv_parser_1 = __importDefault(require("csv-parser"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const product_model_js_1 = require("../models/product.model.js");
-const sales_model_js_1 = require("../models/sales.model.js");
+const product_model_js_1 = require("../mongoDb/models/product.model.js");
+const sales_model_js_1 = require("../mongoDb/models/sales.model.js");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const MONGO_URI = process.env.MONGO_URI;
@@ -96,8 +96,8 @@ const importData = async (filePath, type) => {
         mongoose_1.default.connection.close();
     }
 };
-// run node dist/mongoDb/scripts/import-products.js to insert products data 
-//importData("src/assets/products.csv", 'products'); 
-// Uncomment to import sales data and run npm run build then run this commande  node dist/mongoDb/scripts/import-products.js
-importData("src/assets/sales.csv", 'sales');
-//# sourceMappingURL=import-products.js.map
+// run node dist/scripts/import-data.js to insert products data 
+importData("src/assets/products.csv", 'products');
+// Uncomment to import sales data and run npm run build then run this commande   node dist/scripts/import-data.js
+//importData("src/assets/sales.csv", 'sales'); 
+//# sourceMappingURL=import-data.js.map

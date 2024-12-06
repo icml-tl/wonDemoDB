@@ -4,16 +4,25 @@ exports.router = void 0;
 const sales_model_js_1 = require("../models/sales.model.js");
 const router = require("express").Router();
 exports.router = router;
-router.get("/total_sales", async (req, res) => {
+router.get("/analytics/total_sales", async (req, res) => {
     try {
-        const startDate = req.query.startDate;
-        const endDate = req.query.endDate;
+        const { startDate, endDate } = req.query;
         if (!startDate || !endDate) {
-            return res.status(400).json({ error: "Les dates startDate et endDate sont obligatoires" });
+            const allTimeTotalSales = await sales_model_js_1.Sale.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalAmount: { $sum: "$TotalAmount" }
+                    }
+                }
+            ]);
+            if (!allTimeTotalSales || allTimeTotalSales.length === 0) {
+                return res.status(200).json({ totalSales: 0 });
+            }
+            return res.status(200).json({ totalSales: allTimeTotalSales[0].totalAmount });
         }
         const from = new Date(startDate);
         const to = new Date(endDate);
-        // Validate date range
         if (isNaN(from.getTime()) || isNaN(to.getTime())) {
             return res.status(400).json({ error: "Les dates startDate et endDate doivent être valides" });
         }
@@ -33,7 +42,6 @@ router.get("/total_sales", async (req, res) => {
                 },
             },
         ]);
-        // If no sales are found, return 0
         if (!totalSales || totalSales.length === 0) {
             return res.status(200).json({ totalSales: 0 });
         }
@@ -44,80 +52,173 @@ router.get("/total_sales", async (req, res) => {
         return res.status(500).send("Erreur serveur");
     }
 });
-router.get("/trending_products", async (req, res) => {
+router.get("/analytics/trending_products", async (req, res) => {
     try {
-        const topSellingProducts = await sales_model_js_1.Sale.aggregate([
-            {
-                $group: {
-                    _id: "$ProductID", // Group by ProductID
-                    totalQuantity: { $sum: { $toInt: "$Quantity" } }, // Sum the Quantity for each product
-                },
-            },
-            {
-                $sort: { totalQuantity: -1 }, // Sort by totalQuantity in descending order
-            },
-            {
-                $limit: 3,
-            },
-            {
-                $project: {
-                    _id: 0,
-                    ProductID: "$_id",
-                    totalQuantity: 1,
-                },
-            },
-        ]);
-        // no topSellingProducts are found
-        if (!topSellingProducts || topSellingProducts.length === 0) {
-            return res.status(200).json({ topSellingProducts: [] });
+        const { startDate, endDate } = req.query;
+        let matchStage = null;
+        if (startDate && endDate) {
+            try {
+                const from = new Date(decodeURIComponent(startDate));
+                const to = new Date(decodeURIComponent(endDate));
+                if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+                    return res.status(400).json({
+                        error: "Les dates startDate et endDate doivent être valides",
+                        debug: {
+                            startDate,
+                            endDate,
+                            parsedStartDate: from.toString(),
+                            parsedEndDate: to.toString(),
+                        }
+                    });
+                }
+                matchStage = {
+                    $match: {
+                        Date: {
+                            $gte: from,
+                            $lte: to
+                        }
+                    }
+                };
+            }
+            catch (error) {
+                console.error('Date parsing error:', error);
+                return res.status(400).json({
+                    error: "Les dates startDate et endDate doivent être valides",
+                    details: error instanceof Error ? error.message : 'Unknown error'
+                });
+            }
         }
-        return res.status(200).json({ topSellingProducts });
-    }
-    catch (e) {
-        console.error("Erreur lors de la récupération des produits les plus vendus :", e);
-        return res.status(500).send("Erreur serveur");
-    }
-});
-router.get("/category_sales", async (req, res) => {
-    try {
-        const categorySales = await sales_model_js_1.Sale.aggregate([
+        const pipeline = [
+            ...(matchStage ? [matchStage] : []),
             {
                 $lookup: {
                     from: "products",
                     localField: "ProductID",
                     foreignField: "ProductID",
                     as: "productDetails",
-                },
+                }
+            },
+            { $unwind: "$productDetails" },
+            {
+                $group: {
+                    _id: "$ProductID",
+                    totalQuantity: { $sum: { $toInt: "$Quantity" } },
+                    productName: { $first: "$productDetails.ProductName" },
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    productId: "$_id",
+                    productName: 1,
+                    totalQuantity: 1,
+                }
+            },
+            { $sort: { totalQuantity: -1 } },
+            { $limit: 5 }
+        ];
+        const topSellingProducts = await sales_model_js_1.Sale.aggregate(pipeline);
+        if (!topSellingProducts || topSellingProducts.length === 0) {
+            return res.status(200).json({ products: [] });
+        }
+        return res.status(200).json({ products: topSellingProducts });
+    }
+    catch (e) {
+        console.error("Erreur lors de la récupération des produits tendance:", e);
+        return res.status(500).send("Erreur serveur");
+    }
+});
+router.get("/analytics/category_sales", async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        let matchStage = null;
+        if (startDate && endDate) {
+            try {
+                const from = new Date(decodeURIComponent(startDate));
+                const to = new Date(decodeURIComponent(endDate));
+                if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+                    return res.status(400).json({
+                        error: "Les dates startDate et endDate doivent être valides",
+                        debug: {
+                            startDate,
+                            endDate,
+                            parsedStartDate: from.toString(),
+                            parsedEndDate: to.toString(),
+                        }
+                    });
+                }
+                matchStage = {
+                    $match: {
+                        Date: {
+                            $gte: from,
+                            $lte: to
+                        }
+                    }
+                };
+            }
+            catch (error) {
+                console.error('Date parsing error:', error);
+                return res.status(400).json({
+                    error: "Les dates startDate et endDate doivent être valides",
+                    details: error instanceof Error ? error.message : 'Unknown error'
+                });
+            }
+        }
+        const pipeline = [
+            ...(matchStage ? [matchStage] : []),
+            {
+                $lookup: {
+                    from: "products",
+                    localField: "ProductID",
+                    foreignField: "ProductID",
+                    as: "productDetails",
+                }
             },
             {
                 $unwind: {
                     path: "$productDetails",
-                    preserveNullAndEmptyArrays: true,
-                },
+                    preserveNullAndEmptyArrays: false,
+                }
             },
             {
                 $group: {
                     _id: { $ifNull: ["$productDetails.Category", "Uncategorized"] },
                     totalSales: { $sum: 1 },
-                },
+                    totalRevenue: { $sum: "$TotalAmount" }
+                }
             },
             {
                 $project: {
                     _id: 0,
-                    Category: "$_id",
+                    category: "$_id",
                     totalSales: 1,
-                },
+                    totalRevenue: 1
+                }
             },
-        ]);
-        const totalSalesCount = await sales_model_js_1.Sale.countDocuments();
+            {
+                $sort: { totalSales: -1 }
+            }
+        ];
+        const categorySales = await sales_model_js_1.Sale.aggregate(pipeline);
+        // Calculate total sales count for the given period
+        const totalSalesQuery = matchStage
+            ? [matchStage, { $count: "total" }]
+            : [{ $count: "total" }];
+        const totalSalesResult = await sales_model_js_1.Sale.aggregate(totalSalesQuery);
+        const totalSalesCount = totalSalesResult[0]?.total || 0;
         const categorySalesWithPercentage = categorySales.map(category => ({
-            Category: category.Category,
+            category: category.category,
             totalSales: category.totalSales,
-            percentage: ((category.totalSales / totalSalesCount) * 100).toFixed(2) + '%',
+            totalRevenue: category.totalRevenue,
+            percentage: ((category.totalSales / totalSalesCount) * 100).toFixed(2) + '%'
         }));
         return res.status(200).json({
             totalSalesCount,
             categorySales: categorySalesWithPercentage,
+            dateRange: matchStage ? {
+                from: new Date(startDate),
+                to: new Date(endDate)
+            } : 'all-time'
         });
     }
     catch (e) {
@@ -125,50 +226,7 @@ router.get("/category_sales", async (req, res) => {
         return res.status(500).json({ message: "Server error while retrieving sales data." });
     }
 });
-router.get("/products_Retourne", async (req, res) => {
-    try {
-        const productReturn = await sales_model_js_1.Sale.aggregate([
-            {
-                $lookup: {
-                    from: "products",
-                    localField: "ProductID",
-                    foreignField: "ProductID",
-                    as: "productDetails",
-                },
-            },
-            {
-                $unwind: {
-                    path: "$productDetails",
-                    preserveNullAndEmptyArrays: true,
-                },
-            },
-            {
-                $group: {
-                    _id: "$ProductID",
-                    totalSales: { $sum: 1 },
-                },
-            },
-            {
-                $project: {
-                    _id: 0,
-                    ProductID: "$_id",
-                    totalSales: 1,
-                },
-            },
-        ]);
-        const totalSalesCount = await sales_model_js_1.Sale.countDocuments();
-        let salesPerProduct = productReturn.map(product => ({
-            ProductID: product.ProductID,
-            totalSales: product.totalSales,
-        }));
-        return res.status(200).json({ salesPerProduct, totalSalesCount });
-    }
-    catch (e) {
-        console.error("Error retrieving sales data:", e);
-        return res.status(500).json({ message: "Server error while retrieving sales data." });
-    }
-});
-router.get("/products_sells", async (req, res) => {
+router.get("/analytics/products_sells", async (req, res) => {
     try {
         const productName = req.query.productName;
         if (!productName) {

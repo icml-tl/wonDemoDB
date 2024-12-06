@@ -34,7 +34,7 @@ app.use((0, cookie_parser_1.default)());
 // api routes 
 app.use('/api', product_router_js_1.router);
 app.use('/api', sales_router_js_1.router);
-app.use('/analytics', analytics_router_js_1.router);
+app.use('/api', analytics_router_js_1.router);
 app.get('/', (req, res) => {
     res.status(200).send("Hello World of numeric");
 });

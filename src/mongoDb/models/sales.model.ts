@@ -1,15 +1,25 @@
-import mongoose from "mongoose";
+import { model, Schema } from "mongoose";
+
+export interface SaleData {
+    ProductID: string;
+    Quantity: number;
+    Date: Date;
+    TotalAmount: number;
+}
 
 
-const salesSchema = new mongoose.Schema({
+
+const salesSchema = new Schema<SaleData>({
     ProductID: { type: String, required: true },
-    Quantity : { type: String, required: true },
-    Date : { type: Date },
-    TotalAmount : { type: Number, required: true },
+    Quantity : { type: Number, required: true },
+    Date : {  type: Date, required: true },
+    TotalAmount : { type: Number ,  required: true },
 
 });
 
-const Sale = mongoose.model('Sales', salesSchema, 'sales');  
+
+const Sale = model<SaleData>('Sales', salesSchema, 'sales');  
+
 
 
 export { Sale };

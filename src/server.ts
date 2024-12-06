@@ -7,8 +7,6 @@ import { router as productRouter } from './mongoDb/routes/product.router.js';
 import { router as salesRouter } from './mongoDb/routes/sales.router.js';
 import { router as analyticsRouter } from './mongoDb/routes/analytics.router.js';
 
-
-
 dotenv.config();
 
 const MongoDB_Connection_String = process.env.MONGO_URI || 'mongodb://localhost:27017/wonDb'; 
@@ -23,7 +21,6 @@ async function connectToMongoDB(connectionString: string) {
     console.error("Error connecting to MongoDB: ", e);
   }
 }
-
 
 connectToMongoDB(MongoDB_Connection_String);
 
@@ -41,7 +38,7 @@ app.use('/api', productRouter);
 
 app.use('/api', salesRouter);
 
-app.use('/analytics', analyticsRouter);
+app.use('/api', analyticsRouter);
 
 
 

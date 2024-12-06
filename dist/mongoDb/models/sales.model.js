@@ -1,16 +1,13 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Sale = void 0;
-const mongoose_1 = __importDefault(require("mongoose"));
-const salesSchema = new mongoose_1.default.Schema({
+const mongoose_1 = require("mongoose");
+const salesSchema = new mongoose_1.Schema({
     ProductID: { type: String, required: true },
-    Quantity: { type: String, required: true },
-    Date: { type: Date },
+    Quantity: { type: Number, required: true },
+    Date: { type: Date, required: true },
     TotalAmount: { type: Number, required: true },
 });
-const Sale = mongoose_1.default.model('Sales', salesSchema, 'sales');
+const Sale = (0, mongoose_1.model)('Sales', salesSchema, 'sales');
 exports.Sale = Sale;
 //# sourceMappingURL=sales.model.js.map
